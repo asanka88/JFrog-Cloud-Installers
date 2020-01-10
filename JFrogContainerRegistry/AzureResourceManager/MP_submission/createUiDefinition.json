@@ -53,12 +53,12 @@
       },
       {
         "name": "clusterConfig",
-        "label": "Artifactory Cluster settings",
+        "label": "JFrog Container Registry Cluster settings",
         "subLabel": {
-          "preValidation": "Configure Artifactory Cluster settings",
+          "preValidation": "Configure JFrog Container Registry Cluster settings",
           "postValidation": "Done!"
         },
-        "bladeTitle": "Artifactory Cluster Settings",
+        "bladeTitle": "JFrog Container Registry Cluster Settings",
         "elements": [
           {
             "name": "clusterName",
@@ -76,7 +76,7 @@
             "name": "vmSku",
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Virtual machine size",
-            "toolTip": "The size of the virtual machine for Artifactory",
+            "toolTip": "The size of the virtual machine for JFrog Container Registry",
             "recommendedSizes": [
               "Standard_A2_v2"
             ],
@@ -84,6 +84,7 @@
               "allowedSizes": [
                 "Standard_A2_v2",
                 "Standard_A4_v2",
+                "Standard_A4",
                 "Standard_D2s_v3",
                 "Standard_D4s_v3",
                 "Standard_DS2_v2",
@@ -100,23 +101,11 @@
           {
             "name": "artifactoryVersion",
             "type": "Microsoft.Common.DropDown",
-            "label": "Artifactory-vm image version to deploy.",
-            "defaultValue": "6.8.0",
-            "toolTip": "",
+            "label": "JFrog Container Registry-vm image version to deploy.",
+            "defaultValue": "0.16.0",
+            "toolTip": "Version of JFrog Container Registry to dpeloy",
             "constraints": {
               "allowedValues": [
-                {
-                  "label": "6.6.1",
-                  "value": "6.6.1"
-                },
-                {
-                  "label": "6.7.0",
-                  "value": "6.7.0"
-                },
-                {
-                  "label": "6.8.0",
-                  "value": "6.8.0"
-                },
                 {
                   "label": "6.16.0",
                   "value": "0.16.0"
@@ -128,26 +117,21 @@
           },
           {
             "name": "masterKey",
-            "type": "Microsoft.Common.PasswordBox",
-            "label": {
-              "password": "Artifactory master Key"
-            },
+            "type": "Microsoft.Common.TextBox",
+            "label": "JFrog Container Registry master Key",
             "defaultValue": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-            "toolTip": "Master key for Artifactory cluster. Generate master.key using command '$openssl rand -hex 16'",
+            "toolTip": "Master key for JFrog Container Registry cluster. Generate master.key using command '$openssl rand -hex 16'",
             "constraints": {
               "required": true,
               "regex": "^[a-z0-9A-Z]{1,32}$",
               "validationMessage": "Only alphanumeric characters are allowed, and the value must be 1-32 characters long."
-            },
-            "options": {
-              "hideConfirmation": true
             }
           },
           {
             "name": "certificate",
             "type": "Microsoft.Common.TextBox",
             "label": "Provide your SSL Certificate.",
-            "toolTip": "To use Artifactory as docker registry you need to provide wild card valid Certificate. Provide your SSL Certificate.",
+            "toolTip": "To use JFrog Container Registry as docker registry you need to provide wild card valid Certificate. Provide your SSL Certificate.",
             "constraints": {
               "required": true,
               "regex": "^(-----BEGIN CERTIFICATE-----)(.+)(-----END CERTIFICATE-----)$",
@@ -180,9 +164,9 @@
           {
             "name": "artifactoryServerName",
             "type": "Microsoft.Common.TextBox",
-            "label": "Provide artifactory server name to be used in Nginx.",
+            "label": "Provide JFrog Container Registry server name to be used in Nginx.",
             "defaultValue": "artifactory",
-            "toolTip": "Provide artifactory server name to be used in Nginx. e.g artifactory for artifactory.jfrog.team",
+            "toolTip": "Provide JFrog Container Registry server name to be used in Nginx. e.g artifactory for artifactory.jfrog.team",
             "constraints": {
               "required": true,
               "regex": "^[a-z0-9A-Z]{1,20}$",
@@ -192,9 +176,9 @@
           {
             "name": "extraJavaOptions",
             "type": "Microsoft.Common.TextBox",
-            "label": "Setting Java Memory Parameters for Artifactory",
+            "label": "Setting Java Memory Parameters for JFrog Container Registry",
             "defaultValue": "-server -Xms512m -Xmx2g -Xss256k -XX:+UseG1GC -XX:OnOutOfMemoryError=\\\"kill -9 %p\\\"",
-            "toolTip": "Setting Java Memory Parameters for Artifactory. Learn about system requirements for Artifactory https://www.jfrog.com/confluence/display/RTF/System+Requirements#SystemRequirements-RecommendedHardware",
+            "toolTip": "Setting Java Memory Parameters for JFrog Container Registry. Learn about system requirements for JFrog Container Registry https://www.jfrog.com/confluence/display/RTF/System+Requirements#SystemRequirements-RecommendedHardware",
             "constraints": {
               "required": false
             }
@@ -256,7 +240,7 @@
             "type": "Microsoft.Common.DropDown",
             "label": "Database Edition",
             "defaultValue": "Basic",
-            "toolTip": "",
+            "toolTip": "Edition of Database to use",
             "constraints": {
               "allowedValues": [
                 {
@@ -296,16 +280,8 @@
             "constraints": {
               "allowedValues": [
                 {
-                  "label": "Premium_LRS",
-                  "value": "Premium_LRS"
-                },
-                {
                   "label": "Standard_LRS",
                   "value": "Standard_LRS"
-                },
-                {
-                  "label": "Standard_GRS",
-                  "value": "Standard_GRS"
                 }
               ],
               "required": true

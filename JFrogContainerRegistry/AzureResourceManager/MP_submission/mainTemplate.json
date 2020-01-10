@@ -23,15 +23,6 @@
         "description": "Location for the resources."
       }
     },
-    "nodeCount": {
-      "type": "int",
-      "defaultValue": 2,
-      "minValue": 1,
-      "maxValue": 100,
-      "metadata": {
-        "description": "Number of VM instances (100 or less) for member artifactory nodes. Minimum 1 node."
-      }
-    },
     "artifactoryVersion": {
       "type": "string",
       "defaultValue": "0.16.0",
@@ -43,15 +34,14 @@
         "0.16.0"
       ],
       "metadata": {
-        "description": "Artifactory-vm image version to deploy."
+        "description": "JFrog Container Registry-vm image version to deploy."
       }
     },
     "masterKey": {
       "type": "securestring",
-      "defaultValue": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
       "maxLength": 64,
       "metadata": {
-        "description": "Master key for Artifactory cluster. Generate master.key using command '$openssl rand -hex 16'"
+        "description": "Master key for JFrog Container Registry cluster. Generate master.key using command '$openssl rand -hex 16'"
       }
     },
     "adminUsername": {
@@ -172,13 +162,11 @@
     "subnetPrimaryName": "[concat(variables('namingInfix'), 'primarySubnet')]",
     "subnetMemberName": "[concat(variables('namingInfix'), 'memberSubnet')]",
     "scaleSetPrimaryName": "[concat(variables('namingInfix'), 'primaryScaleset')]",
-    "scaleSetMemberName": "[concat(variables('namingInfix'), 'memberScaleset')]",
     "lbName": "[concat(variables('namingInfix'), 'lb')]",
     "bepoolPrimaryName": "[concat(variables('lbName'), 'primaryBepool')]",
     "bepoolMemberName": "[concat(variables('lbName'), 'memberBepool')]",
     "fepoolPrimaryName": "[concat(variables('lbName'), 'primaryFepool')]",
     "fepoolMemberName": "[concat(variables('lbName'), 'memberFepool')]",
-    "lbID": "[resourceId('Microsoft.Network/loadBalancers', variables('lbName'))]",
     "bepoolPrimaryID": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('lbName'), variables('bepoolPrimaryName'))]",
     "bepoolMemberID": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('lbName'), variables('bepoolMemberName'))]",
     "feIpConfigPrimaryName": "[concat(variables('fepoolPrimaryName'), 'primaryIpConfig')]",
@@ -664,7 +652,7 @@
             "value": "[parameters('DB_Name')]"
           },
           "db_edition": {
-            "value": "[parameters('DB_Edition')]"
+            "value": "[variables('DB_Edition')]"
           },
           "db_location": {
             "value": "[variables('DB_Location')]"
@@ -712,7 +700,7 @@
             "computerNamePrefix": "[variables('namingInfix')]",
             "adminUsername": "[parameters('adminUsername')]",
             "adminPassword": "[parameters('adminPassword')]",
-            "customData": "[base64(concat('#INSTALL SCRIPT INPUTS\nCERTIFICATE_KEY=',parameters('certificateKey'),'\nCERTIFICATE=', parameters('certificate'),'\nCERTIFICATE_DOMAIN=',parameters('certificateDomain'),'\nARTIFACTORY_SERVER_NAME=',parameters('artifactoryServerName'),'\nEXTRA_JAVA_OPTS=',parameters('extraJavaOptions'),'\nJDBC_STR=',reference('Microsoft.Resources/deployments/deploySQLDB').outputs.jdbcConnString.value,'\nDB_NAME=',variables('DB_Name'),'\nDB_ADMIN_USER=',variables('DB_Admin_User'),'\nDB_ADMIN_PASSWD=',variables('DB_Admin_Password'),'\nSTO_ACT_NAME=',variables('storageAccountName'),'\nSTO_ACT_ENDPOINT=',reference(resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))).primaryEndpoints.blob,'\nSTO_CTR_NAME=',variables('vmStorageAccountContainerName'),'\nSTO_ACT_KEY=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2018-07-01').keys[0].value,'\nMASTER_KEY=',variables('masterKey'),'\nIS_PRIMARY=','true','\n'))]"
+            "customData": "[base64(concat('#INSTALL SCRIPT INPUTS\nCERTIFICATE_KEY=',variables('certificateKey'),'\nCERTIFICATE=', variables('certificate'),'\nCERTIFICATE_DOMAIN=',variables('certificateDomain'),'\nARTIFACTORY_SERVER_NAME=',variables('artifactoryServerName'),'\nEXTRA_JAVA_OPTS=',variables('extraJavaOptions'),'\nJDBC_STR=',reference('Microsoft.Resources/deployments/deploySQLDB').outputs.jdbcConnString.value,'\nDB_NAME=',variables('DB_Name'),'\nDB_ADMIN_USER=',variables('DB_Admin_User'),'\nDB_ADMIN_PASSWD=',variables('DB_Admin_Password'),'\nSTO_ACT_NAME=',variables('storageAccountName'),'\nSTO_ACT_ENDPOINT=',reference(resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))).primaryEndpoints.blob,'\nSTO_CTR_NAME=',variables('vmStorageAccountContainerName'),'\nSTO_ACT_KEY=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2018-07-01').keys[0].value,'\nMASTER_KEY=',variables('masterKey'),'\nIS_PRIMARY=','true','\n'))]"
           },
           "networkProfile": {
             "networkInterfaceConfigurations": [
