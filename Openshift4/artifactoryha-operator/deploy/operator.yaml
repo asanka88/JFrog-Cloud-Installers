@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: artifactoryha-operator
+  namespace: jfrog-artifactory
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: artifactoryha-operator
+  template:
+    metadata:
+      labels:
+        name: artifactoryha-operator
+    spec:
+      serviceAccountName: artifactoryha-operator
+      containers:
+        - name: artifactoryha-operator
+          image: solengha-artifactory7-docker-private.jfrog.io/artifactory-ha:v7.100.9
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "artifactoryha-operator"

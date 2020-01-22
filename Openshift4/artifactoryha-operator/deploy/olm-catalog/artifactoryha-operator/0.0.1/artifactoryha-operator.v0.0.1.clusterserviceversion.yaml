@@ -1,0 +1,529 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "charts.helm.k8s.io/v1alpha1",
+          "kind": "ArtifactoryHa",
+          "metadata": {
+            "name": "example-artifactoryha"
+          },
+          "spec": {
+            "access": {
+              "database": {
+                "maxOpenConnections": 80
+              }
+            },
+            "artifactory": {
+              "accessAdmin": {
+                "dataKey": null,
+                "ip": "127.0.0.1",
+                "password": null,
+                "secret": null
+              },
+              "annotations": {},
+              "binarystore": {
+                "enabled": true
+              },
+              "catalinaLoggers": [],
+              "configMapName": null,
+              "configMaps": "",
+              "copyOnEveryStartup": null,
+              "customInitContainers": "",
+              "customPersistentPodVolumeClaim": {},
+              "customPersistentVolumeClaim": {},
+              "customSidecarContainers": "",
+              "customVolumeMounts": "",
+              "customVolumes": "",
+              "database": {
+                "maxOpenConnections": 800
+              },
+              "deleteDBPropertiesOnStartup": true,
+              "externalPort": 8081,
+              "externalPortReplicator": 6061,
+              "extraEnvironmentVariables": null,
+              "haDataDir": {
+                "enabled": false,
+                "path": null
+              },
+              "image": {
+                "pullPolicy": "IfNotPresent",
+                "repository": "docker.bintray.io/jfrog/artifactory-pro"
+              },
+              "internalPort": 8081,
+              "internalPortReplicator": 6061,
+              "javaOpts": {},
+              "joinKey": "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+              "license": {
+                "dataKey": null,
+                "licenseKey": null,
+                "secret": null
+              },
+              "livenessProbe": {
+                "enabled": true,
+                "failureThreshold": 10,
+                "initialDelaySeconds": 180,
+                "path": "/artifactory/webapp/#/login",
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 10
+              },
+              "loggers": [],
+              "masterKey": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+              "membershipPort": 10017,
+              "name": "artifactory-ha",
+              "node": {
+                "affinity": {},
+                "javaOpts": {
+                  "corePoolSize": 16,
+                  "jmx": {
+                    "accessFile": null,
+                    "authenticate": false,
+                    "enabled": false,
+                    "host": null,
+                    "passwordFile": null,
+                    "port": 9010,
+                    "ssl": false
+                  }
+                },
+                "minAvailable": 1,
+                "name": "artifactory-ha-member",
+                "nodeSelector": {},
+                "persistence": {
+                  "existingClaim": false
+                },
+                "podAntiAffinity": {
+                  "topologyKey": "kubernetes.io/hostname",
+                  "type": ""
+                },
+                "replicaCount": 2,
+                "resources": {},
+                "tolerations": []
+              },
+              "persistence": {
+                "accessMode": "ReadWriteOnce",
+                "awsS3": {
+                  "bucketName": "artifactory-ha-aws",
+                  "credential": null,
+                  "endpoint": null,
+                  "identity": null,
+                  "path": "artifactory-ha/filestore",
+                  "properties": {},
+                  "refreshCredentials": true,
+                  "region": null,
+                  "roleName": null,
+                  "s3AwsVersion": "AWS4-HMAC-SHA256",
+                  "testConnection": false
+                },
+                "azureBlob": {
+                  "accountKey": null,
+                  "accountName": null,
+                  "containerName": null,
+                  "endpoint": null,
+                  "testConnection": false
+                },
+                "binarystoreXml": "{{- if eq .Values.artifactory.persistence.type \"file-system\" }}\n\u003c!-- File system replication --\u003e\n{{- if .Values.artifactory.persistence.fileSystem.existingSharedClaim.enabled }}\n\u003c!-- File Storage - Dynamic for Artifactory files, pre-created for DATA and BACKUP --\u003e\n\u003cconfig version=\"4\"\u003e\n    \u003cchain\u003e\n        \u003cprovider id=\"cache-fs\" type=\"cache-fs\"\u003e                   \u003c!-- This is a cached filestore --\u003e\n            \u003cprovider id=\"sharding\" type=\"sharding\"\u003e                   \u003c!-- This is a sharding provider --\u003e\n                {{- range $sharedClaimNumber, $e := until (.Values.artifactory.persistence.fileSystem.existingSharedClaim.numberOfExistingClaims|int) -}}\n                \u003csub-provider id=\"shard{{ $sharedClaimNumber }}\" type=\"state-aware\"/\u003e\n                {{- end }}\n            \u003c/provider\u003e\n        \u003c/provider\u003e\n    \u003c/chain\u003e\n\n    \u003cprovider id=\"cache-fs\" type=\"cache-fs\"\u003e\n        \u003cmaxCacheSize\u003e{{ .Values.artifactory.persistence.maxCacheSize }}\u003c/maxCacheSize\u003e\n        \u003ccacheProviderDir\u003e{{ .Values.artifactory.persistence.cacheProviderDir }}\u003c/cacheProviderDir\u003e\n    \u003c/provider\u003e\n\n    // Specify the read and write strategy and redundancy for the sharding binary provider\n    \u003cprovider id=\"sharding\" type=\"sharding\"\u003e\n        \u003creadBehavior\u003eroundRobin\u003c/readBehavior\u003e\n        \u003cwriteBehavior\u003epercentageFreeSpace\u003c/writeBehavior\u003e\n        \u003credundancy\u003e2\u003c/redundancy\u003e\n    \u003c/provider\u003e\n\n    {{- range $sharedClaimNumber, $e := until (.Values.artifactory.persistence.fileSystem.existingSharedClaim.numberOfExistingClaims|int) -}}\n    //For each sub-provider (mount), specify the filestore location\n    \u003cprovider id=\"shard{{ $sharedClaimNumber }}\" type=\"state-aware\"\u003e\n        \u003cfileStoreDir\u003efilestore{{ $sharedClaimNumber }}\u003c/fileStoreDir\u003e\n    \u003c/provider\u003e\n    {{- end }}\n\u003c/config\u003e\n{{- else }}\n\u003cconfig version=\"2\"\u003e\n    \u003cchain\u003e\n        \u003cprovider id=\"cache-fs\" type=\"cache-fs\"\u003e\n            \u003cprovider id=\"sharding-cluster\" type=\"sharding-cluster\"\u003e\n                \u003creadBehavior\u003ecrossNetworkStrategy\u003c/readBehavior\u003e\n                \u003cwriteBehavior\u003ecrossNetworkStrategy\u003c/writeBehavior\u003e\n                \u003credundancy\u003e{{ .Values.artifactory.persistence.redundancy }}\u003c/redundancy\u003e\n                \u003clenientLimit\u003e2\u003c/lenientLimit\u003e\n                \u003cminSpareUploaderExecutor\u003e2\u003c/minSpareUploaderExecutor\u003e\n                \u003csub-provider id=\"state-aware\" type=\"state-aware\"/\u003e\n                \u003cdynamic-provider id=\"remote\" type=\"remote\"/\u003e\n                \u003cproperty name=\"zones\" value=\"local,remote\"/\u003e\n            \u003c/provider\u003e\n        \u003c/provider\u003e\n    \u003c/chain\u003e\n\n    \u003cprovider id=\"cache-fs\" type=\"cache-fs\"\u003e\n        \u003cmaxCacheSize\u003e{{ .Values.artifactory.persistence.maxCacheSize }}\u003c/maxCacheSize\u003e\n        \u003ccacheProviderDir\u003e{{ .Values.artifactory.persistence.cacheProviderDir }}\u003c/cacheProviderDir\u003e\n    \u003c/provider\u003e\n\n    \u003c!-- Shards add local file-system provider configuration --\u003e\n    \u003cprovider id=\"state-aware\" type=\"state-aware\"\u003e\n        \u003cfileStoreDir\u003eshard-fs-1\u003c/fileStoreDir\u003e\n        \u003czone\u003elocal\u003c/zone\u003e\n    \u003c/provider\u003e\n\n    \u003c!-- Shards dynamic remote provider configuration --\u003e\n    \u003cprovider id=\"remote\" type=\"remote\"\u003e\n        \u003ccheckPeriod\u003e30\u003c/checkPeriod\u003e\n        \u003cserviceId\u003etester-remote1\u003c/serviceId\u003e\n        \u003ctimeout\u003e10000\u003c/timeout\u003e\n        \u003czone\u003eremote\u003c/zone\u003e\n        \u003cproperty name=\"header.remote.block\" value=\"true\"/\u003e\n    \u003c/provider\u003e\n\u003c/config\u003e\n{{- end }}\n{{- end }}\n{{- if eq .Values.artifactory.persistence.type \"google-storage\" }}\n\u003c!-- Google storage --\u003e\n\u003cconfig version=\"2\"\u003e\n    \u003cchain\u003e\n        \u003cprovider id=\"sharding-cluster\" type=\"sharding-cluster\"\u003e\n            \u003creadBehavior\u003ecrossNetworkStrategy\u003c/readBehavior\u003e\n            \u003cwriteBehavior\u003ecrossNetworkStrategy\u003c/writeBehavior\u003e\n            \u003credundancy\u003e{{ .Values.artifactory.persistence.redundancy }}\u003c/redundancy\u003e\n            \u003cminSpareUploaderExecutor\u003e2\u003c/minSpareUploaderExecutor\u003e\n            \u003csub-provider id=\"eventual-cluster\" type=\"eventual-cluster\"\u003e\n                \u003cprovider id=\"retry\" type=\"retry\"\u003e\n                    \u003cprovider id=\"google-storage\" type=\"google-storage\"/\u003e\n                \u003c/provider\u003e\n            \u003c/sub-provider\u003e\n            \u003cdynamic-provider id=\"remote\" type=\"remote\"/\u003e\n            \u003cproperty name=\"zones\" value=\"local,remote\"/\u003e\n        \u003c/provider\u003e\n    \u003c/chain\u003e\n\n    \u003c!-- Set max cache-fs size --\u003e\n    \u003cprovider id=\"cache-fs\" type=\"cache-fs\"\u003e\n        \u003cmaxCacheSize\u003e{{ .Values.artifactory.persistence.maxCacheSize }}\u003c/maxCacheSize\u003e\n        \u003ccacheProviderDir\u003e{{ .Values.artifactory.persistence.cacheProviderDir }}\u003c/cacheProviderDir\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"eventual-cluster\" type=\"eventual-cluster\"\u003e\n        \u003czone\u003elocal\u003c/zone\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"remote\" type=\"remote\"\u003e\n        \u003ccheckPeriod\u003e30\u003c/checkPeriod\u003e\n        \u003ctimeout\u003e10000\u003c/timeout\u003e\n        \u003czone\u003eremote\u003c/zone\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"file-system\" type=\"file-system\"\u003e\n        \u003cfileStoreDir\u003e{{ .Values.artifactory.persistence.mountPath }}/data/filestore\u003c/fileStoreDir\u003e\n        \u003ctempDir\u003e/tmp\u003c/tempDir\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"google-storage\" type=\"google-storage\"\u003e\n        \u003cproviderId\u003egoogle-cloud-storage\u003c/providerId\u003e\n        \u003cendpoint\u003e{{ .Values.artifactory.persistence.googleStorage.endpoint }}\u003c/endpoint\u003e\n        \u003chttpsOnly\u003e{{ .Values.artifactory.persistence.googleStorage.httpsOnly }}\u003c/httpsOnly\u003e\n        \u003cbucketName\u003e{{ .Values.artifactory.persistence.googleStorage.bucketName }}\u003c/bucketName\u003e\n        \u003cidentity\u003e{{ .Values.artifactory.persistence.googleStorage.identity }}\u003c/identity\u003e\n        \u003ccredential\u003e{{ .Values.artifactory.persistence.googleStorage.credential }}\u003c/credential\u003e\n        \u003cpath\u003e{{ .Values.artifactory.persistence.googleStorage.path }}\u003c/path\u003e\n        \u003cbucketExists\u003e{{ .Values.artifactory.persistence.googleStorage.bucketExists }}\u003c/bucketExists\u003e\n    \u003c/provider\u003e\n\u003c/config\u003e\n{{- end }}\n{{- if eq .Values.artifactory.persistence.type \"aws-s3\" }}\n\u003c!-- AWS S3 --\u003e\n\u003cconfig version=\"2\"\u003e\n    \u003cchain\u003e \u003c!--template=\"cluster-s3\"--\u003e\n        \u003cprovider id=\"cache-fs\" type=\"cache-fs\"\u003e\n            \u003cprovider id=\"sharding-cluster\" type=\"sharding-cluster\"\u003e\n                \u003csub-provider id=\"eventual-cluster\" type=\"eventual-cluster\"\u003e\n                    \u003cprovider id=\"retry-s3\" type=\"retry\"\u003e\n                        \u003cprovider id=\"s3\" type=\"s3\"/\u003e\n                    \u003c/provider\u003e\n                \u003c/sub-provider\u003e\n                \u003cdynamic-provider id=\"remote\" type=\"remote\"/\u003e\n            \u003c/provider\u003e\n        \u003c/provider\u003e\n    \u003c/chain\u003e\n\n    \u003c!-- Set max cache-fs size --\u003e\n    \u003cprovider id=\"cache-fs\" type=\"cache-fs\"\u003e\n        \u003cmaxCacheSize\u003e{{ .Values.artifactory.persistence.maxCacheSize }}\u003c/maxCacheSize\u003e\n        \u003ccacheProviderDir\u003e{{ .Values.artifactory.persistence.cacheProviderDir }}\u003c/cacheProviderDir\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"eventual-cluster\" type=\"eventual-cluster\"\u003e\n        \u003czone\u003elocal\u003c/zone\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"remote\" type=\"remote\"\u003e\n        \u003ccheckPeriod\u003e30\u003c/checkPeriod\u003e\n        \u003ctimeout\u003e10000\u003c/timeout\u003e\n        \u003czone\u003eremote\u003c/zone\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"sharding-cluster\" type=\"sharding-cluster\"\u003e\n        \u003creadBehavior\u003ecrossNetworkStrategy\u003c/readBehavior\u003e\n        \u003cwriteBehavior\u003ecrossNetworkStrategy\u003c/writeBehavior\u003e\n        \u003credundancy\u003e{{ .Values.artifactory.persistence.redundancy }}\u003c/redundancy\u003e\n        \u003cproperty name=\"zones\" value=\"local,remote\"/\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"s3\" type=\"s3\"\u003e\n        \u003cendpoint\u003e{{ .Values.artifactory.persistence.awsS3.endpoint }}\u003c/endpoint\u003e\n    {{- if .Values.artifactory.persistence.awsS3.roleName }}\n        \u003croleName\u003e{{ .Values.artifactory.persistence.awsS3.roleName }}\u003c/roleName\u003e\n        \u003crefreshCredentials\u003etrue\u003c/refreshCredentials\u003e\n    {{- else }}\n        \u003crefreshCredentials\u003e{{ .Values.artifactory.persistence.awsS3.refreshCredentials }}\u003c/refreshCredentials\u003e\n    {{- end }}\n        \u003cs3AwsVersion\u003e{{ .Values.artifactory.persistence.awsS3.s3AwsVersion }}\u003c/s3AwsVersion\u003e\n        \u003ctestConnection\u003e{{ .Values.artifactory.persistence.awsS3.testConnection }}\u003c/testConnection\u003e\n        \u003chttpsOnly\u003etrue\u003c/httpsOnly\u003e\n        \u003cregion\u003e{{ .Values.artifactory.persistence.awsS3.region }}\u003c/region\u003e\n        \u003cbucketName\u003e{{ .Values.artifactory.persistence.awsS3.bucketName }}\u003c/bucketName\u003e\n    {{- if .Values.artifactory.persistence.awsS3.identity }}\n        \u003cidentity\u003e{{ .Values.artifactory.persistence.awsS3.identity }}\u003c/identity\u003e\n    {{- end }}\n    {{- if .Values.artifactory.persistence.awsS3.credential }}\n        \u003ccredential\u003e{{ .Values.artifactory.persistence.awsS3.credential }}\u003c/credential\u003e\n    {{- end }}\n        \u003cpath\u003e{{ .Values.artifactory.persistence.awsS3.path }}\u003c/path\u003e\n    {{- range $key, $value := .Values.artifactory.persistence.awsS3.properties }}\n        \u003cproperty name=\"{{ $key }}\" value=\"{{ $value }}\"/\u003e\n    {{- end }}\n    \u003c/provider\u003e\n\u003c/config\u003e\n{{- end }}\n{{- if eq .Values.artifactory.persistence.type \"azure-blob\" }}\n\u003c!-- Azure Blob Storage --\u003e\n\u003cconfig version=\"2\"\u003e\n    \u003cchain\u003e \u003c!--template=\"cluster-azure-blob-storage\"--\u003e\n        \u003cprovider id=\"cache-fs\" type=\"cache-fs\"\u003e\n            \u003cprovider id=\"sharding-cluster\" type=\"sharding-cluster\"\u003e\n                \u003csub-provider id=\"eventual-cluster\" type=\"eventual-cluster\"\u003e\n                    \u003cprovider id=\"retry-azure-blob-storage\" type=\"retry\"\u003e\n                        \u003cprovider id=\"azure-blob-storage\" type=\"azure-blob-storage\"/\u003e\n                    \u003c/provider\u003e\n                \u003c/sub-provider\u003e\n                \u003cdynamic-provider id=\"remote\" type=\"remote\"/\u003e\n            \u003c/provider\u003e\n        \u003c/provider\u003e\n    \u003c/chain\u003e\n\n    \u003c!-- Set max cache-fs size --\u003e\n    \u003cprovider id=\"cache-fs\" type=\"cache-fs\"\u003e\n        \u003cmaxCacheSize\u003e{{ .Values.artifactory.persistence.maxCacheSize }}\u003c/maxCacheSize\u003e\n        \u003ccacheProviderDir\u003e{{ .Values.artifactory.persistence.cacheProviderDir }}\u003c/cacheProviderDir\u003e\n    \u003c/provider\u003e\n\n    \u003c!-- cluster eventual Azure Blob Storage Service default chain --\u003e\n    \u003cprovider id=\"sharding-cluster\" type=\"sharding-cluster\"\u003e\n        \u003creadBehavior\u003ecrossNetworkStrategy\u003c/readBehavior\u003e\n        \u003cwriteBehavior\u003ecrossNetworkStrategy\u003c/writeBehavior\u003e\n        \u003credundancy\u003e2\u003c/redundancy\u003e\n        \u003clenientLimit\u003e1\u003c/lenientLimit\u003e\n        \u003cproperty name=\"zones\" value=\"local,remote\"/\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"remote\" type=\"remote\"\u003e\n        \u003czone\u003eremote\u003c/zone\u003e\n    \u003c/provider\u003e\n\n    \u003cprovider id=\"eventual-cluster\" type=\"eventual-cluster\"\u003e\n        \u003czone\u003elocal\u003c/zone\u003e\n    \u003c/provider\u003e\n\n    \u003c!--cluster eventual template--\u003e\n    \u003cprovider id=\"azure-blob-storage\" type=\"azure-blob-storage\"\u003e\n        \u003caccountName\u003e{{ .Values.artifactory.persistence.azureBlob.accountName }}\u003c/accountName\u003e\n        \u003caccountKey\u003e{{ .Values.artifactory.persistence.azureBlob.accountKey }}\u003c/accountKey\u003e\n        \u003cendpoint\u003e{{ .Values.artifactory.persistence.azureBlob.endpoint }}\u003c/endpoint\u003e\n        \u003ccontainerName\u003e{{ .Values.artifactory.persistence.azureBlob.containerName }}\u003c/containerName\u003e\n        \u003ctestConnection\u003e{{ .Values.artifactory.persistence.azureBlob.testConnection }}\u003c/testConnection\u003e\n    \u003c/provider\u003e\n\u003c/config\u003e\n{{- end }}\n",
+                "cacheProviderDir": "cache",
+                "customBinarystoreXmlSecret": null,
+                "enabled": true,
+                "eventual": {
+                  "numberOfThreads": 10
+                },
+                "fileSystem": {
+                  "existingSharedClaim": {
+                    "backupDir": "/var/opt/jfrog/artifactory-backup",
+                    "dataDir": "/var/opt/jfrog/artifactory/artifactory-data",
+                    "enabled": false,
+                    "numberOfExistingClaims": 1
+                  }
+                },
+                "googleStorage": {
+                  "bucketExists": false,
+                  "bucketName": "artifactory-ha-gcp",
+                  "credential": null,
+                  "endpoint": "storage.googleapis.com",
+                  "httpsOnly": false,
+                  "identity": null,
+                  "path": "artifactory-ha/filestore"
+                },
+                "local": false,
+                "maxCacheSize": 50000000000,
+                "mountPath": "/var/opt/jfrog/artifactory",
+                "nfs": {
+                  "backupDir": "/var/opt/jfrog/artifactory-backup",
+                  "capacity": "200Gi",
+                  "dataDir": "/var/opt/jfrog/artifactory-ha",
+                  "haBackupMount": "/backup",
+                  "haDataMount": "/data",
+                  "ip": null
+                },
+                "redundancy": 3,
+                "size": "200Gi",
+                "type": "file-system"
+              },
+              "primary": {
+                "affinity": {},
+                "javaOpts": {
+                  "corePoolSize": 16,
+                  "jmx": {
+                    "accessFile": null,
+                    "authenticate": false,
+                    "enabled": false,
+                    "host": null,
+                    "passwordFile": null,
+                    "port": 9010,
+                    "ssl": false
+                  }
+                },
+                "name": "artifactory-ha-primary",
+                "nodeSelector": {},
+                "persistence": {
+                  "existingClaim": false
+                },
+                "podAntiAffinity": {
+                  "topologyKey": "kubernetes.io/hostname",
+                  "type": ""
+                },
+                "resources": {},
+                "tolerations": []
+              },
+              "readinessProbe": {
+                "enabled": true,
+                "failureThreshold": 10,
+                "initialDelaySeconds": 60,
+                "path": "/artifactory/webapp/#/login",
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 10
+              },
+              "replicator": {
+                "enabled": false,
+                "publicUrl": null
+              },
+              "service": {
+                "name": "artifactory",
+                "pool": "members",
+                "type": "ClusterIP"
+              },
+              "systemYaml": "shared:\n  extraJavaOpts: \u003e\n  {{- with .Values.artifactory.primary.javaOpts }}\n    -Dartifactory.async.corePoolSize={{ .corePoolSize }}\n  {{- if .xms }}\n    -Xms{{ .xms }}\n  {{- end }}\n  {{- if .xmx }}\n    -Xmx{{ .xmx }}\n  {{- end }}\n  {{- if .jmx.enabled }}\n    -Dcom.sun.management.jmxremote\n    -Dcom.sun.management.jmxremote.port={{ .jmx.port }}\n    -Dcom.sun.management.jmxremote.rmi.port={{ .jmx.port }}\n    -Dcom.sun.management.jmxremote.ssl={{ .jmx.ssl }}\n  {{- if .jmx.host }}\n    -Djava.rmi.server.hostname={{ tpl .jmx.host $ }}\n  {{- else }}\n    -Djava.rmi.server.hostname={{ template \"artifactory-ha.fullname\" $ }}\n  {{- end }}\n  {{- if .jmx.authenticate }}\n    -Dcom.sun.management.jmxremote.authenticate=true\n    -Dcom.sun.management.jmxremote.access.file={{ .jmx.accessFile }}\n    -Dcom.sun.management.jmxremote.password.file={{ .jmx.passwordFile }}\n  {{- else }}\n    -Dcom.sun.management.jmxremote.authenticate=false\n  {{- end }}\n  {{- end }}\n  {{- if .other }}\n    {{ .other }}\n  {{- end }}\n  {{- end }}\n  database:\n  {{- if .Values.postgresql.enabled }}\n    type: postgresql\n    url: 'jdbc:postgresql://{{ .Release.Name }}-postgresql:{{ .Values.postgresql.service.port }}/{{ .Values.postgresql.postgresDatabase }}'\n    host: ''\n    driver: org.postgresql.Driver\n    username: \"artifactory\"\n    password: '{{ .Values.postgresql.postgresPassword }}'\n  {{ else }}\n    type: '{{ .Values.database.type }}'\n    url: '{{ .Values.database.url }}'\n    driver: '{{ .Values.database.driver }}'\n    username: '{{ .Values.database.user }}'\n    password: '{{ .Values.database.password }}'\n  {{- end }}\n  security:\n    joinKey: '{{ .Values.artifactory.joinKey }}'\n    masterKey: '{{ .Values.artifactory.masterKey }}'\nartifactory:\n{{- if .Values.artifactory.haDataDir.enabled }}\n  node:\n    haDataDir: {{ .Values.artifactory.haDataDir.path }}\n{{- end }}\n  database:\n    maxOpenConnections: {{ .Values.artifactory.database.maxOpenConnections }}\naccess:\n  database:\n    maxOpenConnections: '{{ .Values.access.database.maxOpenConnections }}'\n  {{- if .Values.access.database.enabled }}\n    type: '{{ .Values.access.database.type }}'\n    url: '{{ .Values.access.database.url }}'\n    driver: '{{ .Values.access.database.driver }}'\n    username: '{{ .Values.access.database.user }}'\n    password: '{{ .Values.access.database.password }}'\n  {{- end }}\n",
+              "terminationGracePeriodSeconds": 30,
+              "uid": 1030,
+              "userPluginSecrets": null
+            },
+            "database": {
+              "driver": null,
+              "host": null,
+              "password": null,
+              "port": null,
+              "secrets": {},
+              "type": null,
+              "url": null,
+              "user": null
+            },
+            "imagePullSecrets": null,
+            "ingress": {
+              "additionalRules": [],
+              "annotations": {},
+              "defaultBackend": {
+                "enabled": true
+              },
+              "enabled": false,
+              "hosts": [],
+              "labels": null,
+              "path": "/",
+              "tls": null
+            },
+            "initContainerImage": "alpine:3.8",
+            "installer": {
+              "platform": null,
+              "type": null
+            },
+            "logger": {
+              "image": {
+                "repository": "busybox",
+                "tag": "1.30"
+              }
+            },
+            "networkpolicy": [
+              {
+                "egress": [
+                  {}
+                ],
+                "ingress": [
+                  {}
+                ],
+                "name": "artifactory",
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "artifactory-ha"
+                  }
+                }
+              }
+            ],
+            "nginx": {
+              "affinity": {},
+              "artifactoryConf": "ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;\nssl_certificate  {{ .Values.nginx.persistence.mountPath }}/ssl/tls.crt;\nssl_certificate_key  {{ .Values.nginx.persistence.mountPath }}/ssl/tls.key;\nssl_session_cache shared:SSL:1m;\nssl_prefer_server_ciphers   on;\n## server configuration\nserver {\n  listen {{ .Values.nginx.internalPortHttps }} ssl;\n  listen {{ .Values.nginx.internalPortHttp }} ;\n  server_name ~(?\u003crepo\u003e.+)\\.{{ include \"artifactory-ha.fullname\" . }} {{ include \"artifactory-ha.fullname\" . }}\n  {{- range .Values.ingress.hosts -}}\n    {{- if contains \".\" . -}}\n      {{ \"\" | indent 0 }} ~(?\u003crepo\u003e.+)\\.{{ (splitn \".\" 2 .)._1  }} {{ . }}\n    {{- end -}}\n  {{- end -}};\n  if ($http_x_forwarded_proto = '') {\n    set $http_x_forwarded_proto  $scheme;\n  }\n  ## Application specific logs\n  ## access_log /var/log/nginx/artifactory-access.log timing;\n  ## error_log /var/log/nginx/artifactory-error.log;\n  rewrite ^/$ /artifactory/webapp/ redirect;\n  rewrite ^/artifactory/?(/webapp)?$ /artifactory/webapp/ redirect;\n  if ( $repo != \"\" ) {\n    rewrite ^/(v1|v2)/(.*) /artifactory/api/docker/$repo/$1/$2 break;\n  }\n  rewrite ^/(v1|v2)/([^/]+)(.*)$ /artifactory/api/docker/$2/$1/$3;\n  rewrite ^/(v1|v2)/ /artifactory/api/docker/$1/;\n\n  chunked_transfer_encoding on;\n  client_max_body_size 0;\n  location /artifactory/ {\n    proxy_read_timeout  900;\n    proxy_pass_header   Server;\n    proxy_cookie_path   ~*^/.* /;\n    if ( $request_uri ~ ^/artifactory/(.*)$ ) {\n      proxy_pass       http://{{ include \"artifactory-ha.fullname\" . }}:{{ .Values.artifactory.externalPort }}/artifactory/$1;\n    }\n    proxy_pass          http://{{ include \"artifactory-ha.fullname\" . }}:{{ .Values.artifactory.externalPort }}/artifactory/;\n    proxy_set_header    X-Artifactory-Override-Base-Url $http_x_forwarded_proto://$host:$server_port/artifactory;\n    proxy_set_header    X-Forwarded-Port  $server_port;\n    proxy_set_header    X-Forwarded-Proto $http_x_forwarded_proto;\n    proxy_set_header    Host              $http_host;\n    proxy_set_header    X-Forwarded-For   $proxy_add_x_forwarded_for;\n  }\n}\n",
+              "customArtifactoryConfigMap": null,
+              "customConfigMap": null,
+              "enabled": true,
+              "externalPortHttp": 80,
+              "externalPortHttps": 443,
+              "externalPortReplicator": 6061,
+              "gid": 107,
+              "image": {
+                "pullPolicy": "IfNotPresent",
+                "repository": "docker.bintray.io/jfrog/nginx-artifactory-pro"
+              },
+              "internalPortHttp": 80,
+              "internalPortHttps": 443,
+              "internalPortReplicator": 6061,
+              "livenessProbe": {
+                "enabled": true,
+                "failureThreshold": 10,
+                "initialDelaySeconds": 60,
+                "path": "/artifactory/webapp/#/login",
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 10
+              },
+              "loggers": [],
+              "mainConf": "# Main Nginx configuration file\nworker_processes  4;\nerror_log  {{ .Values.nginx.persistence.mountPath }}/logs//error.log warn;\npid        /tmp/nginx.pid;\nevents {\n  worker_connections  1024;\n}\nhttp {\n  include       /etc/nginx/mime.types;\n  default_type  application/octet-stream;\n  variables_hash_max_size 1024;\n  variables_hash_bucket_size 64;\n  server_names_hash_max_size 4096;\n  server_names_hash_bucket_size 128;\n  types_hash_max_size 2048;\n  types_hash_bucket_size 64;\n  proxy_read_timeout 2400s;\n  client_header_timeout 2400s;\n  client_body_timeout 2400s;\n  proxy_connect_timeout 75s;\n  proxy_send_timeout 2400s;\n  proxy_buffer_size 32k;\n  proxy_buffers 40 32k;\n  proxy_busy_buffers_size 64k;\n  proxy_temp_file_write_size 250m;\n  proxy_http_version 1.1;\n  client_body_buffer_size 128k;\n  log_format  main  '$remote_addr - $remote_user [$time_local] \"$request\" '\n  '$status $body_bytes_sent \"$http_referer\" '\n  '\"$http_user_agent\" \"$http_x_forwarded_for\"';\n  log_format timing 'ip = $remote_addr '\n  'user = \\\"$remote_user\\\" '\n  'local_time = \\\"$time_local\\\" '\n  'host = $host '\n  'request = \\\"$request\\\" '\n  'status = $status '\n  'bytes = $body_bytes_sent '\n  'upstream = \\\"$upstream_addr\\\" '\n  'upstream_time = $upstream_response_time '\n  'request_time = $request_time '\n  'referer = \\\"$http_referer\\\" '\n  'UA = \\\"$http_user_agent\\\"';\n  access_log  {{ .Values.nginx.persistence.mountPath }}/logs/access.log  timing;\n  sendfile        on;\n  #tcp_nopush     on;\n  keepalive_timeout  65;\n  #gzip  on;\n  include /etc/nginx/conf.d/*.conf;\n{{- if .Values.artifactory.replicator.enabled }}\n  include /etc/nginx/conf.d/replicator/*.conf;\n{{- end }}\n}\n",
+              "name": "nginx",
+              "nodeSelector": {},
+              "persistence": {
+                "accessMode": "ReadWriteOnce",
+                "enabled": false,
+                "mountPath": "/var/opt/jfrog/nginx",
+                "size": "5Gi"
+              },
+              "readinessProbe": {
+                "enabled": true,
+                "failureThreshold": 10,
+                "initialDelaySeconds": 10,
+                "path": "/artifactory/webapp/#/login",
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 10
+              },
+              "replicaCount": 1,
+              "resources": {},
+              "service": {
+                "externalTrafficPolicy": "Cluster",
+                "loadBalancerIP": null,
+                "loadBalancerSourceRanges": [],
+                "type": "LoadBalancer"
+              },
+              "tolerations": [],
+              "uid": 104
+            },
+            "postgresql": {
+              "enabled": true,
+              "imageTag": "9.6.11",
+              "persistence": {
+                "enabled": true,
+                "size": "50Gi"
+              },
+              "postgresConfig": {
+                "maxConnections": "1500"
+              },
+              "postgresDatabase": "artifactory",
+              "postgresPassword": null,
+              "postgresUser": "artifactory",
+              "resources": {},
+              "service": {
+                "port": 5432
+              }
+            },
+            "rbac": {
+              "create": true,
+              "role": {
+                "rules": [
+                  {
+                    "apiGroups": [
+                      ""
+                    ],
+                    "resources": [
+                      "services",
+                      "endpoints",
+                      "pods"
+                    ],
+                    "verbs": [
+                      "get",
+                      "watch",
+                      "list"
+                    ]
+                  }
+                ]
+              }
+            },
+            "serviceAccount": {
+              "create": true,
+              "name": null
+            }
+          }
+        }
+      ]
+    capabilities: Basic Install
+  name: artifactoryha-operator.v0.0.1
+  namespace: jfrog-artifactory
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: {}
+  description: Placeholder description
+  displayName: Artifactoryha Operator
+  install:
+    spec:
+      imagePullSecrets:
+        - name: solengha
+      deployments:
+      - name: artifactoryha-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: artifactoryha-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: artifactoryha-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: artifactoryha-operator
+                image: solengha-artifactory7-docker-private.jfrog.io/artifactory-ha/artifactory-ha:v7.100.9
+                imagePullPolicy: Always
+                imagePullSecrets:
+                - name: solengha
+                name: artifactoryha-operator
+                resources: {}
+              serviceAccountName: artifactoryha-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - rolebindings
+          - roles
+          verbs:
+          - '*'
+        - apiGroups:
+          - extensions
+          resources:
+          - deployments
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - networkpolicies
+          verbs:
+          - '*'
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - persistentvolumeclaims
+          - secrets
+          - serviceaccounts
+          - services
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - artifactoryha-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - charts.helm.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: artifactoryha-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider: {}
+  replaces: artifactoryha-operator.v0.0.0
+  version: 0.0.1
