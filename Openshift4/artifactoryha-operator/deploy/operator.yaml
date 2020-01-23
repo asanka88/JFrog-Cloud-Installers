@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: artifactoryha-operator
+  name: artifactoryha
   namespace: jfrog-artifactory
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: artifactoryha-operator
+      name: artifactoryha
   template:
     metadata:
       labels:
-        name: artifactoryha-operator
+        name: artifactoryha
     spec:
-      serviceAccountName: artifactoryha-operator
+      serviceAccountName: jfrog-artifactory
       containers:
-        - name: artifactoryha-operator
-          image: solengha-artifactory7-docker-private.jfrog.io/artifactory-ha:v7.100.9
-          imagePullPolicy: Always
+        - name: artifactoryha
+          image: image-registry.openshift-image-registry.svc:5000/jfrog-artifactory/artifactory-ha@sha256:4fc2349a363f0058a84ed7b8839a2b8f1fc922593b65edb70119a275cf96b66e
+          imagePullPolicy: IfNotPresent
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
