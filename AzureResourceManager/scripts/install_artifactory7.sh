@@ -92,7 +92,6 @@ server {
   ## error_log /var/log/nginx/artifactory-error.log;
   rewrite ^/$ /ui/ redirect;
   rewrite ^/ui$ /ui/ redirect;
-  rewrite ^/(v1|v2)/(.*) /artifactory/api/docker/\$repo/\$1/\$2;
   chunked_transfer_encoding on;
   client_max_body_size 0;
   location / {

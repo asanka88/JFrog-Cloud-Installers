@@ -4,6 +4,7 @@
   "parameters": {
     "db_user": {
       "type": "string",
+      "defaultValue": "artifactory",
       "minLength": 1
     },
     "db_password": {
@@ -11,10 +12,12 @@
     },
     "db_server": {
       "type": "string",
+      "defaultValue": "artmssqlsrv",
       "minLength": 1
     },
     "db_name": {
       "type": "string",
+      "defaultValue": "artdb",
       "minLength": 1
     },
     "db_location": {
